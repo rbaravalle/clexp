@@ -26,6 +26,7 @@
         (doseq [line (line-seq rdr)]
         (spit "test.txt" (drop-last (first line)) :append true))))
 
+(clojure.string/replace "\" b a" #"\"|b" {"\"" "1" "b" "2"})
 
 
 
