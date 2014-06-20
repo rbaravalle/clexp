@@ -21,12 +21,16 @@
 
 (def csvfile (opencsv "InOutData.csv"))
 
+
+(defn strreplace
+	"Quita comillas de las strings" 
+	[str]
+	(clojure.string/replace str #"\"" {"\"" ""}))
+
 (defn openfile [filename]
     (with-open [rdr (io/reader filename)]
         (doseq [line (line-seq rdr)]
-        (spit "test.txt" (drop-last (first line)) :append true))))
-
-(clojure.string/replace "\" b a" #"\"|b" {"\"" "1" "b" "2"})
+        (spit "test.txt" (str (strreplace line) "\n") :append true))))
 
 
 
