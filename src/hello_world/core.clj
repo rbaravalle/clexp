@@ -1,12 +1,9 @@
 (ns hello-world.core
     (require [clojure.data.csv :as csv]
-         [clojure.java.io :as io]))
+         [clojure.java.io :as io]
+         [clj-time.format :as f]))
 
-(defn foo
-  "I don't do a whole lot."
-  [x]
-  (println x "Hello, World!"))
-
+(use 'clj-time.core)
 
 (defn opencsv [filename]
     (with-open [in-file (io/reader filename)] 
@@ -19,9 +16,6 @@
                  [["abc" "def"]
                   ["ghi" "jkl"]])))
 
-(def csvfile (opencsv "InOutData.csv"))
-
-
 (defn strreplace
 	"Quita comillas de las strings" 
 	[str]
@@ -30,7 +24,24 @@
 (defn openfile [filename]
     (with-open [rdr (io/reader filename)]
         (doseq [line (line-seq rdr)]
-        (spit "test.txt" (str (strreplace line) "\n") :append true))))
+        (spit "test.csv" (str (strreplace line) "\n") :append true))))
+
+(defn seq-contains?
+  "Determine whether a sequence contains a given item"
+  [sequence item]
+  (if (empty? sequence)
+    false
+    (reduce #(or %1 %2) (map #(= %1 item) sequence))))
+
+(def csvfile (opencsv "test.csv"))
+
+(def fecha-csv (nth (nth csvfile 0) 2))
+
+(def fecha-formatter (f/formatter "dd/MM/yyyy hh:mm:ss"))
+
+(def fecha (f/parse fecha-formatter fecha-csv))
+
+(def empleados (distinct (map first csvfile)))
 
 
 
