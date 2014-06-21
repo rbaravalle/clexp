@@ -41,7 +41,13 @@
 
 (def fecha (f/parse fecha-formatter fecha-csv))
 
+;(t/in-hours (t/interval (t/date-time 1986) (t/date-time 1990)))
+
+
+; lista de empleados
 (def empleados (distinct (map first csvfile)))
+
+(def diastrabajados (zipmap empleados (make-array Integer/TYPE (count empleados))))
 
 
 
