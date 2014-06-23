@@ -4,6 +4,7 @@
          [clj-time.format :as f]))
 
 (use 'clj-time.core)
+(require '[clj-time.core :as t])
 
 (defn opencsv [filename]
     (with-open [in-file (io/reader filename)] 
@@ -21,10 +22,10 @@
 	[str]
 	(clojure.string/replace str #"\"" {"\"" ""}))
 
-(defn openfile [filename]
+(defn openfile [filename outfile]
     (with-open [rdr (io/reader filename)]
         (doseq [line (line-seq rdr)]
-        (spit "test.csv" (str (strreplace line) "\n") :append true))))
+        (spit outfile (str (strreplace line) "\n") :append true))))
 
 (defn seq-contains?
   "Determine whether a sequence contains a given item"
@@ -32,6 +33,7 @@
   (if (empty? sequence)
     false
     (reduce #(or %1 %2) (map #(= %1 item) sequence))))
+
 
 (def csvfile (opencsv "test.csv"))
 
@@ -41,7 +43,7 @@
 
 (def fecha (f/parse fecha-formatter fecha-csv))
 
-;(t/in-hours (t/interval (t/date-time 1986) (t/date-time 1990)))
+(t/in-hours (t/interval (t/date-time 1986) (t/date-time 1990)))
 
 
 ; lista de empleados
