@@ -67,11 +67,11 @@
 
 ; aplica proc a cada subseccion de empleados 
 (defn res [proc csvfile emplados]
-     (map (fn [e] (proc (emp e csvfile)) ) empleados))
+     (zipmap (map (fn [e] (count (distinct(proc (emp e csvfile)))) ) empleados) empleados))
 
 (defn fdiastrabajados [fi]	
-    (if (nil? fi) 
-       ()
+    (if (empty? fi) 
+       nil
        (let [fecha (f/parse fecha-formatter (nth (first fi) 2)) ]
 	(cons (str (t/day fecha) (t/month fecha) (t/year fecha)) (fdiastrabajados (rest fi))) ))
 )
