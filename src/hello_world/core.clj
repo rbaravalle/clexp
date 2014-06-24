@@ -39,17 +39,42 @@
 
 (def fecha-csv (nth (nth csvfile 0) 2))
 
-(def fecha-formatter (f/formatter "dd/MM/yyyy hh:mm:ss"))
+(def fecha-formatter (f/formatter "dd/MM/yyyy HH:mm:ss"))
 
 (def fecha (f/parse fecha-formatter fecha-csv))
-
-(t/in-hours (t/interval (t/date-time 1986) (t/date-time 1990)))
 
 
 ; lista de empleados
 (def empleados (distinct (map first csvfile)))
 
+
+; cuantos registros tiene el empleado emp en el archivo de entrada
+(defn howmany [empleado csvfile]
+    (count (filter (fn [a] (= (first a) empleado)) csvfile)))
+
+; cada empleado con su numero de entradas en el archivo
+(def cuantos
+    (zipmap empleados (map (fn [n] (howmany n csvfile)) empleados)))
+
+; dias trabajados por cada empleado
 (def diastrabajados (zipmap empleados (make-array Integer/TYPE (count empleados))))
 
+; porcion del csv pertenieciente al empleado "empleado"
+(defn emp [empleado csvfile]
+    (filter (fn [a] (= (first a) empleado)) csvfile))
 
 
+
+; aplica proc a cada subseccion de empleados 
+(defn res [proc csvfile emplados]
+     (map (fn [e] (proc (emp e csvfile)) ) empleados))
+
+(defn fdiastrabajados [fi]	
+    (if (nil? fi) 
+       ()
+       (let [fecha (f/parse fecha-formatter (nth (first fi) 2)) ]
+	(cons (str (t/day fecha) (t/month fecha) (t/year fecha)) (fdiastrabajados (rest fi))) ))
+)
+
+; dias trabajados
+(def dt (res fdiastrabajados csvfile empleados)) 
