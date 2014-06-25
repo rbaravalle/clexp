@@ -1,10 +1,11 @@
 (ns hello-world.core
     (require [clojure.data.csv :as csv]
          [clojure.java.io :as io]
-         [clj-time.format :as f]))
+         ))
 
 (use 'clj-time.core)
 (require '[clj-time.core :as t])
+(require '[clj-time.format :as f])
 
 (defn opencsv [filename]
     (with-open [in-file (io/reader filename)] 
@@ -56,18 +57,14 @@
 (def cuantos
     (zipmap empleados (map (fn [n] (howmany n csvfile)) empleados)))
 
-; dias trabajados por cada empleado
-(def diastrabajados (zipmap empleados (make-array Integer/TYPE (count empleados))))
 
 ; porcion del csv pertenieciente al empleado "empleado"
 (defn emp [empleado csvfile]
     (filter (fn [a] (= (first a) empleado)) csvfile))
 
-
-
 ; aplica proc a cada subseccion de empleados 
-(defn res [proc csvfile emplados]
-     (zipmap (map (fn [e] (count (distinct(proc (emp e csvfile)))) ) empleados) empleados))
+(defn appe [proc csvfile empleados]
+     (map (fn [e] (proc (emp e csvfile))) empleados))
 
 (defn fdiastrabajados [fi]	
     (if (empty? fi) 
@@ -77,4 +74,18 @@
 )
 
 ; dias trabajados
-(def dt (res fdiastrabajados csvfile empleados)) 
+(def diastr 
+    (zipmap 
+        (appe (fn [x] (count (distinct (fdiastrabajados x)))) csvfile empleados)
+        empleados))
+
+; agrega un 0 si no lo tiene al principio
+(defn st [s] (if (< s 10) (str "0" s) (str s)))
+
+; total de horas,minutos y segundos de un intervalo
+(defn fhours [inter]
+    (let [isecs (t/in-seconds inter)
+         hours (int (/ isecs 3600))
+         mins (int (/ (mod isecs 3600) 60))
+         secs (mod (mod isecs 3600) 60)]
+     (str (st hours) ":" (st mins) ":" (st secs)) ))
