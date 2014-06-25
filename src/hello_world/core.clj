@@ -89,3 +89,19 @@
          mins (int (/ (mod isecs 3600) 60))
          secs (mod (mod isecs 3600) 60)]
      (str (st hours) ":" (st mins) ":" (st secs)) ))
+
+; calcula tiempo total trabajado sobre la tabla "tabla"
+(defn intervalos [tabla]
+    (if (< (count tabla) 2) 0
+    (+ (t/in-seconds (t/interval 
+        (f/parse fecha-formatter (nth (nth tabla 0) 2))
+        (f/parse fecha-formatter (nth (nth tabla 1) 2)) ))
+        (intervalos (drop 2 tabla))
+    )
+))
+
+; horas trabajadas totales
+(def horastr 
+    (zipmap 
+        (appe (fn [x] (fhours (intervalos x))) csvfile empleados)
+        empleados))
