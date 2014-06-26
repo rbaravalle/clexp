@@ -84,7 +84,7 @@
 
 ; total de horas,minutos y segundos de un intervalo
 (defn fhours [inter]
-    (let [isecs (t/in-seconds inter)
+    (let [isecs  inter
          hours (int (/ isecs 3600))
          mins (int (/ (mod isecs 3600) 60))
          secs (mod (mod isecs 3600) 60)]
