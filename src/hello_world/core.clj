@@ -62,10 +62,11 @@
 (defn emp [empleado csvfile]
     (filter (fn [a] (= (first a) empleado)) csvfile))
 
-; aplica proc a cada subseccion de empleados 
+; aplica proc a cada empleado 
 (defn appe [proc csvfile empleados]
      (map (fn [e] (proc (emp e csvfile))) empleados))
 
+; retorna la lista de dias trabajados distintos en fi
 (defn fdiastrabajados [fi]	
     (if (empty? fi) 
        nil
@@ -73,21 +74,15 @@
 	(cons (str (t/day fecha) (t/month fecha) (t/year fecha)) (fdiastrabajados (rest fi))) ))
 )
 
-; dias trabajados
-(def diastr 
-    (zipmap 
-        (appe (fn [x] (count (distinct (fdiastrabajados x)))) csvfile empleados)
-        empleados))
 
 ; agrega un 0 si no lo tiene al principio
 (defn st [s] (if (< s 10) (str "0" s) (str s)))
 
 ; total de horas,minutos y segundos de un intervalo
 (defn fhours [inter]
-    (let [isecs  inter
-         hours (int (/ isecs 3600))
-         mins (int (/ (mod isecs 3600) 60))
-         secs (mod (mod isecs 3600) 60)]
+    (let [hours (int (/ inter 3600))
+         mins (int (/ (mod inter 3600) 60))
+         secs (mod (mod inter 3600) 60)]
      (str (st hours) ":" (st mins) ":" (st secs)) ))
 
 ; calcula tiempo total trabajado sobre la tabla "tabla"
@@ -100,8 +95,41 @@
     )
 ))
 
-; horas trabajadas totales
+; calcula tiempo total trabajado sobre el dia "d"
+(defn intervalosdia [dias]
+    (if (< (count dia) 2) 0
+    (+ (t/in-seconds (t/interval 
+        (f/parse fecha-formatter (nth tabla 0))
+        (f/parse fecha-formatter (nth tabla 1)) ))
+        (intervalos (drop 2 tabla))
+    )
+))
+
+----------------------------------------
+
+; cantidad de dias trabajados por empleado
+; ----------------------------------------
+(def diastr 
+    (zipmap 
+        (appe (fn [x] (count (distinct (fdiastrabajados x)))) csvfile empleados)
+        empleados))
+
+; cantidad de horas,minutos,segundos trabajados por empleado
+; ----------------------------------------
 (def horastr 
     (zipmap 
         (appe (fn [x] (fhours (intervalos x))) csvfile empleados)
         empleados))
+
+; horas trabajadas por dia
+(def horasdia 
+    (zipmap 
+        (appe   (fn [x] 
+                   (map (fn [d] (fhours 
+                         (intervalos d))) (distinct (fdiastrabajados x))))
+                csvfile empleados)
+        empleados))
+
+
+; horas trabajada por local
+
