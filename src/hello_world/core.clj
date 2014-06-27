@@ -62,6 +62,9 @@
 (defn emp [empleado csvfile]
     (filter (fn [a] (= (first a) empleado)) csvfile))
 
+; agrega un 0 si no lo tiene al principio
+(defn st [s] (if (< s 10) (str "0" s) (str s)))
+
 ; aplica proc a cada empleado 
 (defn appe [proc csvfile empleados]
      (map (fn [e] (proc (emp e csvfile))) empleados))
@@ -71,12 +74,11 @@
     (if (empty? fi) 
        nil
        (let [fecha (f/parse fecha-formatter (nth (first fi) 2)) ]
-	(cons (str (t/day fecha) (t/month fecha) (t/year fecha)) (fdiastrabajados (rest fi))) ))
+	(cons (str (st (t/day fecha)) (st (t/month fecha)) (st (t/year fecha))) (fdiastrabajados (rest fi))) ))
 )
 
 
-; agrega un 0 si no lo tiene al principio
-(defn st [s] (if (< s 10) (str "0" s) (str s)))
+
 
 ; total de horas,minutos y segundos de un intervalo
 (defn fhours [inter]
@@ -95,17 +97,13 @@
     )
 ))
 
-; calcula tiempo total trabajado sobre el dia "d"
-(defn intervalosdia [dias]
-    (if (< (count dia) 2) 0
-    (+ (t/in-seconds (t/interval 
-        (f/parse fecha-formatter (nth tabla 0))
-        (f/parse fecha-formatter (nth tabla 1)) ))
-        (intervalos (drop 2 tabla))
-    )
-))
+; compara la fecha de la fila row con d
+(defn sameday [row d]
+	(let [fecha (f/parse fecha-formatter (nth row 2)) ]
+	 (= (str (st (t/day fecha)) (st (t/month fecha)) (st (t/year fecha))) d))
+)
 
-----------------------------------------
+;----------------------------------------
 
 ; cantidad de dias trabajados por empleado
 ; ----------------------------------------
@@ -126,7 +124,7 @@
     (zipmap 
         (appe   (fn [x] 
                    (map (fn [d] (fhours 
-                         (intervalos d))) (distinct (fdiastrabajados x))))
+                         (intervalos (filter (fn [row] (sameday row d)) x)))) (distinct (fdiastrabajados x))))
                 csvfile empleados)
         empleados))
 
