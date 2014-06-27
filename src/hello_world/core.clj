@@ -77,6 +77,9 @@
 	(cons (str (st (t/day fecha)) (st (t/month fecha)) (st (t/year fecha))) (fdiastrabajados (rest fi))) ))
 )
 
+; retorna la lista de los locales distintos en fi	
+(def locales (distinct (map last csvfile)))
+
 
 
 
@@ -103,6 +106,11 @@
 	 (= (str (st (t/day fecha)) (st (t/month fecha)) (st (t/year fecha))) d))
 )
 
+; compara el local de la fila row con d
+(defn samelocal [row l]
+    (= (last row) l)
+)
+
 ;----------------------------------------
 
 ; cantidad de dias trabajados por empleado
@@ -120,14 +128,22 @@
         empleados))
 
 ; horas trabajadas por dia
+; ----------------------------------------
 (def horasdia 
     (zipmap 
         (appe   (fn [x] 
                    (map (fn [d] (fhours 
-                         (intervalos (filter (fn [row] (sameday row d)) x)))) (distinct (fdiastrabajados x))))
+                         (intervalos (filter (fn [row] (sameday row d)) x)))) (distinct (fdiastrabajados csvfile))))
                 csvfile empleados)
         empleados))
 
 
 ; horas trabajada por local
-
+; ----------------------------------------
+(def horaslocal
+    (zipmap 
+        (appe   (fn [x] 
+                   (map (fn [l] (fhours 
+                         (intervalos (filter (fn [row] (samelocal row l)) x)))) locales))
+                csvfile empleados)
+        empleados))
