@@ -134,14 +134,25 @@
                          (intervalos (filter (fn [row] (sameday row d)) x)))) (distinct (fdiastrabajados csvfile))))
                 csvfile empleados))
 
-(map (fn [a] (concat (nth (nth a 0) 0) (nth (nth a 1) 0)) ) [diastotal horastotal])
+; meses
+(def mesmap {"01" "Ene" "02" "Feb" "03" "Mar" "04" "Abr" "05" "May" "06" "Jun"
+             "07" "Jul" "08" "Ago" "09" "Sep" "10" "Oct" "11" "Nov" "12" "Dic" })
 
+; formatos de la columnas que contienen dias "02-Feb-2014"
+(defn format-column-days [x]
+   (str (subs x 0 2) "-" (get mesmap (subs x 2 4)) "-" (subs x 4 8) ))
+
+; fila con las cabeceras
 (def primerafilacsv 
   (flatten 
-    ["Empleado" "Días trabajados" "Total de horas" (map (fn [s] (str "Local " s)) locales) dias]))
+    ["Empleado" "Días trabajados" "Total de horas" 
+		(map (fn [s] (str "Local " s)) locales) 
+		(map format-column-days dias)]))
 
+; informacion computada
 (def datos
   (cons primerafilacsv (map flatten (zipmap empleados (map (comp flatten vector) diastotal horastotal horaslocal horasdia)))))
 
+; imprime csv
 (defn salida [datos outfile]
     (map (fn [row] (spit outfile (str (join ", " row) "\n") :append true)) datos))
