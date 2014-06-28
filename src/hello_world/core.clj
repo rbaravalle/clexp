@@ -6,6 +6,7 @@
 (use 'clj-time.core)
 (require '[clj-time.core :as t])
 (require '[clj-time.format :as f])
+(use '[clojure.string :only (join)])
 
 (defn opencsv [filename]
     (with-open [in-file (io/reader filename)] 
@@ -77,11 +78,9 @@
 	(cons (str (st (t/day fecha)) (st (t/month fecha)) (st (t/year fecha))) (fdiastrabajados (rest fi))) ))
 )
 
-; retorna la lista de los locales distintos en fi	
+; lista de los locales	
 (def locales (distinct (map last csvfile)))
-
-
-
+(def dias (distinct (fdiastrabajados csvfile)))
 
 ; total de horas,minutos y segundos de un intervalo
 (defn fhours [inter]
@@ -113,37 +112,36 @@
 
 ;----------------------------------------
 
-; cantidad de dias trabajados por empleado
+; dias trabajados por empleado
 ; ----------------------------------------
-(def diastr 
-    (zipmap 
-        (appe (fn [x] (count (distinct (fdiastrabajados x)))) csvfile empleados)
-        empleados))
-
-; cantidad de horas,minutos,segundos trabajados por empleado
-; ----------------------------------------
-(def horastr 
-    (zipmap 
-        (appe (fn [x] (fhours (intervalos x))) csvfile empleados)
-        empleados))
-
-; horas trabajadas por dia
-; ----------------------------------------
-(def horasdia 
-    (zipmap 
-        (appe   (fn [x] 
-                   (map (fn [d] (fhours 
-                         (intervalos (filter (fn [row] (sameday row d)) x)))) (distinct (fdiastrabajados csvfile))))
-                csvfile empleados)
-        empleados))
-
+(def diastotal (appe (fn [x] (count (distinct (fdiastrabajados x)))) csvfile empleados))
 
 ; horas trabajada por local
 ; ----------------------------------------
-(def horaslocal
-    (zipmap 
-        (appe   (fn [x] 
+(def horaslocal (appe   (fn [x] 
                    (map (fn [l] (fhours 
                          (intervalos (filter (fn [row] (samelocal row l)) x)))) locales))
-                csvfile empleados)
-        empleados))
+                csvfile empleados))
+
+; cantidad de horas,minutos,segundos trabajados por empleado
+; ----------------------------------------
+(def horastotal (appe (fn [x] (fhours (intervalos x))) csvfile empleados))
+
+; horas trabajadas por dia
+; ----------------------------------------
+(def horasdia (appe   (fn [x] 
+                   (map (fn [d] (fhours 
+                         (intervalos (filter (fn [row] (sameday row d)) x)))) (distinct (fdiastrabajados csvfile))))
+                csvfile empleados))
+
+(map (fn [a] (concat (nth (nth a 0) 0) (nth (nth a 1) 0)) ) [diastotal horastotal])
+
+(def primerafilacsv 
+  (flatten 
+    ["Empleado" "Días trabajados" "Total de horas" (map (fn [s] (str "Local " s)) locales) dias]))
+
+(def datos
+  (cons primerafilacsv (map flatten (zipmap empleados (map (comp flatten vector) diastotal horastotal horaslocal horasdia)))))
+
+(defn salida [datos outfile]
+    (map (fn [row] (spit outfile (str (join ", " row) "\n") :append true)) datos))
