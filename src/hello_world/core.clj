@@ -31,7 +31,7 @@
 
 (defn seq-contains?
   "Determine whether a sequence contains a given item"
-  [sequence item]
+  [item sequence]
   (if (empty? sequence)
     false
     (reduce #(or %1 %2) (map #(= %1 item) sequence))))
@@ -50,18 +50,23 @@
 (def empleados (distinct (map first csvfile)))
 
 
-; cuantos registros tiene el empleado emp en el archivo de entrada
-(defn howmany [empleado csvfile]
-    (count (filter (fn [a] (= (first a) empleado)) csvfile)))
-
-; cada empleado con su numero de entradas en el archivo
-(def cuantos
-    (zipmap empleados (map (fn [n] (howmany n csvfile)) empleados)))
-
-
-; porcion del csv pertenieciente al empleado "empleado"
+; retorna porcion del csv pertenieciente al empleado "empleado"
 (defn emp [empleado csvfile]
     (filter (fn [a] (= (first a) empleado)) csvfile))
+
+; funcion auxiliar
+(defn legajo [empleado]
+    (nth (first (filter (fn [a] (= (first a) empleado)) csvfile)) 1) )
+
+; legajos de los empleados
+(def legajos (map legajo empleados))
+
+; funcion auxiliar
+(defn sector [empleado]
+    (nth (first (filter (fn [a] (= (first a) empleado)) csvfile)) 3) )
+
+; legajos de los empleados
+(def sectores (map sector empleados))
 
 ; agrega un 0 si no lo tiene al principio
 (defn st [s] (if (< s 10) (str "0" s) (str s)))
@@ -79,7 +84,8 @@
 )
 
 ; lista de los locales	
-(def locales (distinct (map last csvfile)))
+(def locales (sort (distinct (map last csvfile))))
+
 (def dias (distinct (fdiastrabajados csvfile)))
 
 ; total de horas,minutos y segundos de un intervalo
@@ -112,9 +118,20 @@
 
 ;----------------------------------------
 
-; dias trabajados por empleado
+; conectar con abm
+(def feriados ["22022014" "05022014"])
+
+; dias habiles trabajados por empleado ; los que NO son feriados
+; ----------------------------------------
+(def diashabiles (appe (fn [x] (count (filter (fn [y] (not (seq-contains? y feriados))) (distinct (fdiastrabajados x))))) csvfile empleados))
+
+; dias totales trabajados por empleado
 ; ----------------------------------------
 (def diastotal (appe (fn [x] (count (distinct (fdiastrabajados x)))) csvfile empleados))
+
+; dias feriados trabajados por empleado
+; ----------------------------------------
+(def diasferiados (map - diastotal diashabiles))
 
 ; horas trabajada por local
 ; ----------------------------------------
@@ -142,16 +159,29 @@
 (defn format-column-days [x]
    (str (subs x 0 2) "-" (get mesmap (subs x 2 4)) "-" (subs x 4 8) ))
 
-; fila con las cabeceras
+; conectar con abm
+(def cant-total-dias (apply max diastotal))
+(def cant-habiles cant-total-dias)
+
+
+;--------------------------------
+; SALIDA
+
 (def primerafilacsv 
   (flatten 
-    ["Empleado" "Días trabajados" "Total de horas" 
-		(map (fn [s] (str "Local " s)) locales) 
-		(map format-column-days dias)]))
+    ["NRO. LEGAJO" "EMPLEADO" "SECTOR" "D. HABILES" "D. FERIADOS" "D. NO TRABAJADOS" "D. TRABAJADOS" 
+		(map (fn [s] (str "LOCAL " s)) locales) 
+		 "TOTAL HORAS"
+                (map format-column-days dias)]))
+
+; datos particulares por empleados
+(def data-empl (reverse (zipmap legajos (reverse (zipmap empleados (map (fn [s] (str "LOCAL " s)) sectores))))))
+
+(def diasnotrabajados (map (fn[x] (- cant-total-dias x)) diastotal))
 
 ; informacion computada
 (def datos
-  (cons primerafilacsv (map flatten (zipmap empleados (map (comp flatten vector) diastotal horastotal horaslocal horasdia)))))
+  (cons primerafilacsv (map flatten (reverse (zipmap data-empl (map (comp flatten vector) diashabiles diasferiados diasnotrabajados diastotal horaslocal horastotal horasdia))))))
 
 ; imprime csv
 (defn salida [datos outfile]
